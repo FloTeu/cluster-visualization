@@ -36,6 +36,9 @@ def main():
     # normalize dataset for easier parameter selection
     X = StandardScaler().fit_transform(cluster_features)
 
+    st.title("Cluster Visualization")
+    st.write("Streamlit application of [sklearn cluster comparison page](https://scikit-learn.org/stable/modules/clustering.html). Additionally to the sklearn page, also 3d visualizations can be produced and the user can apply his custom data.")
+
     # Cluster Algo
     cluster_algos: List[str] = st.sidebar.multiselect(
         "Cluster Algorithms", [ca.value for ca in CLUSTER_ALGORITHMS], [CLUSTER_ALGORITHMS[0]])
@@ -43,7 +46,7 @@ def main():
 
     for i, cluster_algo_str in enumerate(cluster_algos):
         st.sidebar.title(cluster_algo_str)
-        cluster_algo_kwargs = get_cluster_algo_parameters(cluster_algo_str, dataset_name)
+        cluster_algo_kwargs = get_cluster_algo_parameters(cluster_algo_str, dataset_name, cluster_features)
         cluster_labels = get_cluster_labels(X, cluster_algo_str, **cluster_algo_kwargs)
 
         # plot the figure

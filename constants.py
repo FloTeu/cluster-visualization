@@ -1,13 +1,12 @@
 from data_classes import ClusterAlgo, DatasetName
 
 DEFAULT_DATASET_N_SAMPLES = 500
-CLUSTER_ALGORITHMS = [ClusterAlgo.KMEANS, ClusterAlgo.DBSCAN, ClusterAlgo.MEAN_SHIFT, ClusterAlgo.WARD,
-                      ClusterAlgo.AGGLOMERATIVE_CLUSTERING, ClusterAlgo.SPECTRAL_CLUSTERING, ClusterAlgo.OPTICS,
-                      ClusterAlgo.AFFINITY_PROPAGATION, ClusterAlgo.BIRCH, ClusterAlgo.GAUSSIAN_MIXTURE]
+CLUSTER_ALGORITHMS = [ClusterAlgo.KMEANS, ClusterAlgo.AFFINITY_PROPAGATION, ClusterAlgo.MEAN_SHIFT,
+                      ClusterAlgo.SPECTRAL_CLUSTERING, ClusterAlgo.WARD, ClusterAlgo.AGGLOMERATIVE_CLUSTERING,
+                      ClusterAlgo.DBSCAN, ClusterAlgo.OPTICS, ClusterAlgo.BIRCH, ClusterAlgo.GAUSSIAN_MIXTURE]
 DATASET_NAMES = [DatasetName.BLOBS, DatasetName.CIRCLES, DatasetName.Moons, DatasetName.VARIED_VARIANCES, DatasetName.ANISOTROPICLY_DISTRIBUTED, DatasetName.NO_STRUCTURE]
-DEFAULT_N_CLUSTERS = 4
 
-DEFAULT_PARAMS = {
+DEFAULT_CLUSTER_ALGO_PARAMS = {
     "quantile": 0.3,
     "eps": 0.3,
     "damping": 0.9,

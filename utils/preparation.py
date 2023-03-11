@@ -5,8 +5,9 @@ import streamlit as st
 from sklearn import cluster
 from sklearn.datasets import make_blobs, make_circles, make_moons
 from sklearn.neighbors import kneighbors_graph
+from sklearn.metrics.pairwise import _VALID_METRICS as sklearn_metrics
 
-from constants import DEFAULT_DATASET_N_SAMPLES, DEFAULT_PARAMS, DEFAULT_N_CLUSTERS
+from constants import DEFAULT_DATASET_N_SAMPLES, DEFAULT_CLUSTER_ALGO_PARAMS
 from data_classes import DatasetName, ClusterAlgo
 
 
@@ -15,6 +16,12 @@ def read_cluster_algo_default_params():
     with open('cluster_algo_default_params.json') as json_file:
         cluster_algo_default_params = json.load(json_file)
     return cluster_algo_default_params
+
+def get_sklearn_metrics(default):
+    """Return a list of sklearn metrics and include default to first element of array"""
+    metrics = sklearn_metrics.copy()
+    metrics.remove(default)
+    return [default] + metrics
 
 def get_dataset_points(dataset_name: DatasetName, is_3d: bool,
                        n_samples: int = DEFAULT_DATASET_N_SAMPLES) -> np.ndarray:
@@ -80,59 +87,85 @@ def get_cluster_features(dataset_points: np.ndarray) -> np.ndarray:
     return cluster_features
 
 
-def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: DatasetName):
-    params = DEFAULT_PARAMS.copy()
+def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: DatasetName, cluster_features: np.ndarray):
+    params = DEFAULT_CLUSTER_ALGO_PARAMS.copy()
     cluster_algo_default_params = read_cluster_algo_default_params()
     params.update(cluster_algo_default_params[dataset_name])
     # Cluster Algo Parameters
     if cluster_algo == ClusterAlgo.KMEANS:
-        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key="KMEANS NoC")
-        cluster_algo_kwargs = {"n_clusters": n_clusters, "n_init": "auto", "random_state": 1}
-    elif cluster_algo == ClusterAlgo.DBSCAN:
-        eps = st.sidebar.number_input("Epsilon", value=0.5)
-        min_samples = st.sidebar.number_input("Minimum Samples", value=5)
-        cluster_algo_kwargs = {"eps": eps, "min_samples": min_samples}
-    elif cluster_algo == ClusterAlgo.GAUSSIAN_MIXTURE:
-        n_clusters = st.sidebar.number_input("Number of Clusters", value=DEFAULT_N_CLUSTERS, key="GAUSSIAN_MIXTURE NoC")
-        covariance_type = st.sidebar.selectbox(
-            "Covariance type", ["full", "tied", "diag", "spherical"])
-        cluster_algo_kwargs = {"n_components": n_clusters, "covariance_type": covariance_type}
+        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
+        init = st.sidebar.selectbox("Method for Initialization", ["k-means++", "random"], key=f"{cluster_algo} MoI")
+        cluster_algo_kwargs = {"n_clusters": n_clusters, "n_init": "auto", "init": init, "random_state": 0}
+    elif cluster_algo == ClusterAlgo.AFFINITY_PROPAGATION:
+        damping = st.sidebar.number_input("Damping Factor", value=params["damping"], min_value=0.5, max_value=0.99999999, key=f"{cluster_algo} DF")
+        preference = st.sidebar.number_input("Preference", value=params["preference"], key=f"{cluster_algo} P")
+        #affinity = st.sidebar.selectbox("Affinity", ["euclidean", "precomputed"], key="AFFINITY_PROPAGATION A")
+        cluster_algo_kwargs = {"damping": damping, "preference": preference, "random_state": 0}
     elif cluster_algo == ClusterAlgo.MEAN_SHIFT:
-        # estimate bandwidth for mean shift
-        bandwidth = cluster.estimate_bandwidth(X, quantile=params["quantile"])
-        cluster_algo_kwargs = {"bandwidth": bandwidth, "bin_seeding": True}
-    elif cluster_algo in [ClusterAlgo.WARD, ClusterAlgo.AGGLOMERATIVE_CLUSTERING]:
-        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"],
-                                             key=f"{cluster_algo} NoC")
-        n_neighbors = st.sidebar.number_input("Number of Neighbors for Connectivity", value=params["n_neighbors"])
-        # connectivity matrix for structured Ward
-        connectivity = kneighbors_graph(
-            X, n_neighbors=n_neighbors, include_self=False
-        )
-        # make connectivity symmetric
-        connectivity = 0.5 * (connectivity + connectivity.T)
-
-        # TODO: Include input for linkage + cityblock + connectivity
-        cluster_algo_kwargs = {"n_clusters": n_clusters, "connectivity": connectivity,
-                               "linkage": "ward" if cluster_algo == ClusterAlgo.WARD else "average"}
-        if cluster_algo == ClusterAlgo.AGGLOMERATIVE_CLUSTERING:
-            cluster_algo_kwargs["metric"] = "cityblock"
+        bandwidth = cluster.estimate_bandwidth(cluster_features, quantile=params["quantile"])
+        bandwidth_ui = st.sidebar.number_input("Bandwidth", value=bandwidth, key=f"{cluster_algo} B")
+        bin_seeding = st.sidebar.checkbox("Bin Seeding", value=True, key=f"{cluster_algo} BS")
+        cluster_algo_kwargs = {"bandwidth": bandwidth_ui, "bin_seeding": bin_seeding}
     elif cluster_algo == ClusterAlgo.SPECTRAL_CLUSTERING:
         n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"],
                                              key="SPECTRAL_CLUSTERING NoC")
-        # TODO: Include input for eigen_solver + affinity
-        cluster_algo_kwargs = {"n_clusters": n_clusters, "eigen_solver": "arpack", "affinity": "nearest_neighbors"}
+        eigen_solver = st.sidebar.selectbox("Eigenvalue Decomposition Strategy", ["arpack", "lobpcg", "amg"], key=f"{cluster_algo} EDS")
+        affinity = st.sidebar.selectbox("Construction of Affinity Matrix", ["nearest_neighbors", "rbf", "precomputed", "precomputed_nearest_neighbors"], key=f"{cluster_algo} CAM")
+        n_neighbors = st.sidebar.number_input("Number of Neighbors", 10, key="SPECTRAL_CLUSTERING NoN")
+        cluster_algo_kwargs = {"n_clusters": n_clusters, "eigen_solver": eigen_solver, "affinity": affinity, "n_neighbors": n_neighbors,"random_state": 0}
+    elif cluster_algo in [ClusterAlgo.WARD, ClusterAlgo.AGGLOMERATIVE_CLUSTERING]:
+        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"],
+                                             key=f"{cluster_algo} NoC")
+        n_neighbors = st.sidebar.number_input("Number of Neighbors for Connectivity", value=params["n_neighbors"], key=f"{cluster_algo} NoN")
+        # connectivity matrix for structured Ward
+        connectivity = kneighbors_graph(
+            cluster_features, n_neighbors=n_neighbors, include_self=False
+        )
+        # make connectivity symmetric
+        connectivity = 0.5 * (connectivity + connectivity.T)
+        if cluster_algo == ClusterAlgo.AGGLOMERATIVE_CLUSTERING:
+            linkage = st.sidebar.selectbox("Linkage Criterion", ["average", "ward", "complete", "single"], key=f"{cluster_algo} CAM")
+            metric = st.sidebar.selectbox("Metric to Compute Linkage", get_sklearn_metrics(default="cityblock"), key=f"{cluster_algo} MCL")
+        else:
+            linkage = "ward"
+            metric = None
+        cluster_algo_kwargs = {"n_clusters": n_clusters, "connectivity": connectivity,
+                               "linkage": linkage, "metric": metric}
+    elif cluster_algo == ClusterAlgo.DBSCAN:
+        eps = st.sidebar.number_input("Epsilon", value=params["eps"])
+        metric = st.sidebar.selectbox("Metric",
+                                      get_sklearn_metrics(default="euclidean"),
+                                      key=f"{cluster_algo} MDC")
+        min_samples = st.sidebar.number_input("Minimum Samples", value=params["min_samples"], key=f"{cluster_algo} MS")
+        algorithm = st.sidebar.selectbox("Algorithm for Nearest Neighbors",
+                                      ["auto", "ball_tree", "kd_tree", "brute"],
+                                      key=f"{cluster_algo} ANN")
+        cluster_algo_kwargs = {"eps": eps, "min_samples": min_samples, "algorithm": algorithm, "metric": metric}
     elif cluster_algo == ClusterAlgo.OPTICS:
-        # TODO: Include input for min_samples + xi + min_cluster_size
-        cluster_algo_kwargs = {"min_samples": params["min_samples"], "xi": params["xi"],
-                               "min_cluster_size": params["min_cluster_size"]}
-    elif cluster_algo == ClusterAlgo.AFFINITY_PROPAGATION:
-        # TODO: Include input for damping + preference + min_cluster_size
-        cluster_algo_kwargs = {"damping": params["damping"], "preference": params["preference"], "random_state": 0}
+        min_samples = st.sidebar.number_input("Minimum Samples", value=params["min_samples"], key=f"{cluster_algo} MS")
+        metric = st.sidebar.selectbox("Metric for Distance Computation",
+                                      get_sklearn_metrics(default="minkowski"),
+                                      key=f"{cluster_algo} MDC")
+        p = st.sidebar.number_input("Parameter for the Minkowski metric", value=2, key=f"{cluster_algo} P")
+        xi = st.sidebar.number_input("XI", value=params["xi"], key=f"{cluster_algo} XI")
+        min_cluster_size = st.sidebar.number_input("Minimum Number of Samples in Cluster", value=params["min_cluster_size"], key=f"{cluster_algo} min_cluster_size")
+        algorithm = st.sidebar.selectbox("Algorithm for Nearest Neighbors",
+                                      ["auto", "ball_tree", "kd_tree", "brute"],
+                                      key=f"{cluster_algo} ANN")
+        cluster_algo_kwargs = {"min_samples": min_samples, "p": p, "xi": xi, "metric": metric,
+                               "min_cluster_size": min_cluster_size, "algorithm": algorithm}
     elif cluster_algo == ClusterAlgo.BIRCH:
-        # TODO: Include input for damping + preference + min_cluster_size
-        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key="BIRCH NoC")
-        cluster_algo_kwargs = {"n_clusters": n_clusters}
+        threshold = st.sidebar.number_input("Threshold", value=0.5, key=f"{cluster_algo} T")
+        branching_factor = st.sidebar.number_input("Branching Factor", value=50, key=f"{cluster_algo} BF")
+        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
+        cluster_algo_kwargs = {"n_clusters": n_clusters, "threshold": threshold, "branching_factor": branching_factor}
+    elif cluster_algo == ClusterAlgo.GAUSSIAN_MIXTURE:
+        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
+        covariance_type = st.sidebar.selectbox(
+            "Covariance type", ["full", "tied", "diag", "spherical"])
+        init_params = st.sidebar.selectbox(
+            "Init Method", ["kmeans", "k-means++", "random", "random_from_data"])
+        cluster_algo_kwargs = {"n_components": n_clusters, "covariance_type": covariance_type, "init_params": init_params, "random_state": 0}
     else:
         cluster_algo_kwargs = {}
     return cluster_algo_kwargs
