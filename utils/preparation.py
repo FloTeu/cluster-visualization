@@ -1,5 +1,6 @@
 import json
 import random
+from typing import Optional
 
 import numpy as np
 import streamlit as st
@@ -89,13 +90,13 @@ def add_user_data_input_listener(dataset_points: np.ndarray) -> np.ndarray:
     return cluster_features
 
 
-def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: DatasetName, cluster_features: np.ndarray) -> dict:
+def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, cluster_features: np.ndarray, dataset_name: DatasetName) -> dict:
     """
 
-    :param cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
-    :param dataset_name: Dataset name which implies data points
-    :param cluster_features: All 2 or 3 dimensional cluster features
-    :return: Default sklearn cluster algorithm parameters as dict
+        :param cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
+        :param cluster_features: All 2 or 3 dimensional cluster features
+        :param dataset_name: Dataset name which implies data points
+        :return: Default sklearn cluster algorithm parameters as dict
     """
     params = DEFAULT_CLUSTER_ALGO_PARAMS.copy()
     cluster_algo_default_params = read_cluster_algo_default_params()

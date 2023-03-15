@@ -1,16 +1,14 @@
-import math
 from typing import List
 
 import streamlit as st
-import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-import utils.preparation
 from constants import CLUSTER_ALGORITHMS, DATASET_NAMES, MAX_PLOTS_PER_ROW
-import utils
 from utils.preparation import get_default_dataset_points, get_cluster_algo_parameters, add_user_data_input_listener, split_list
 from utils.modeling import get_cluster_labels
 from utils.visualization import plot_figure
+from data_classes import DatasetName
 
 # TODO: Customize icon
 st.set_page_config(
@@ -26,14 +24,24 @@ def main():
     """
     The main function
     """
-    is_3d = st.sidebar.checkbox("Use 3D Features", value=True)
 
-    dataset_name = st.sidebar.selectbox(
-        "Default Data", [dn.value for dn in DATASET_NAMES])
+    st.sidebar.write("Either upload csv file, or use one of the example datasets")
+    uploaded_file = st.sidebar.file_uploader("CSV File", type="csv")
+    if uploaded_file is not None:
+        dataset_name = DatasetName.CUSTOM.value
+        # Can be used wherever a "file-like" object is accepted:
+        df = pd.read_csv(uploaded_file)
+        if df.shape[1] not in [2,3]:
+            raise ValueError(f"Only 2 or 3 dimensional features are allowed, but csv file contains {df.shape[1]} features")
+        default_dataset_points = df.iloc[:,0:3].to_numpy()
+    else:
+        st.sidebar.subheader("Example Dataset")
+        is_3d = st.sidebar.checkbox("Use 3D Features", value=False)
+        dataset_name = st.sidebar.selectbox(
+            "Default Data", [dn.value for dn in DATASET_NAMES])
+        default_dataset_points = get_default_dataset_points(dataset_name, is_3d)
 
-    default_dataset_points = get_default_dataset_points(dataset_name, is_3d)
     cluster_features = add_user_data_input_listener(default_dataset_points)
-
     # normalize dataset for easier parameter selection
     cluster_features_scaled = StandardScaler().fit_transform(cluster_features)
 
@@ -49,7 +57,7 @@ def main():
         display_cols = st.columns(MAX_PLOTS_PER_ROW)
         for i, cluster_algo_str in enumerate(cluster_algo_splitted_list):
             st.sidebar.title(cluster_algo_str)
-            cluster_algo_kwargs = get_cluster_algo_parameters(cluster_algo_str, dataset_name, cluster_features_scaled)
+            cluster_algo_kwargs = get_cluster_algo_parameters(cluster_algo_str, cluster_features_scaled, dataset_name)
             cluster_labels = get_cluster_labels(cluster_features_scaled, cluster_algo_str, **cluster_algo_kwargs)
 
             # plot the figure

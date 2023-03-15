@@ -20,3 +20,4 @@ class DatasetName(str, Enum):
     NO_STRUCTURE = "No Structure"
     VARIED_VARIANCES = "Varied Variances"
     ANISOTROPICLY_DISTRIBUTED = "Anisotropicly Distributed"
+    CUSTOM = "Custom"
