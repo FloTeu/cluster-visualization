@@ -3,13 +3,13 @@ from enum import Enum
 class ClusterAlgo(str, Enum):
     KMEANS = "KMeans"
     DBSCAN = "DBSCAN"
-    MEAN_SHIFT = "mean_shift"
-    WARD = "ward"
-    AGGLOMERATIVE_CLUSTERING = "agglomerative_clustering"
-    SPECTRAL_CLUSTERING = "spectral_clustering"
-    OPTICS = "optics"
-    AFFINITY_PROPAGATION = "affinity_propagation"
-    BIRCH = "birch"
+    MEAN_SHIFT = "MeanShift"
+    WARD = "Ward"
+    AGGLOMERATIVE_CLUSTERING = "Agglomerative Clustering"
+    SPECTRAL_CLUSTERING = "Spectral Clustering"
+    OPTICS = "OPTICS"
+    AFFINITY_PROPAGATION = "Affinity Propagation"
+    BIRCH = "BIRCHS"
     GAUSSIAN_MIXTURE = "Gaussian Mixture"
 
 

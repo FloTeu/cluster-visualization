@@ -1,4 +1,5 @@
 import json
+import random
 
 import numpy as np
 import streamlit as st
@@ -12,7 +13,8 @@ from data_classes import DatasetName, ClusterAlgo
 
 
 @st.cache_data
-def read_cluster_algo_default_params():
+def read_cluster_algo_default_params() -> dict:
+    """Read json file with dynamic default values of sklearn cluster algorithms """
     with open('cluster_algo_default_params.json') as json_file:
         cluster_algo_default_params = json.load(json_file)
     return cluster_algo_default_params
@@ -23,9 +25,10 @@ def get_sklearn_metrics(default):
     metrics.remove(default)
     return [default] + metrics
 
-def get_dataset_points(dataset_name: DatasetName, is_3d: bool,
-                       n_samples: int = DEFAULT_DATASET_N_SAMPLES) -> np.ndarray:
-    """ Returns a 2d or 3d numpy array for a provided DatasetName object
+def get_default_dataset_points(dataset_name: DatasetName, is_3d: bool,
+                               n_samples: int = DEFAULT_DATASET_N_SAMPLES) -> np.ndarray:
+    """
+    Returns a 2d or 3d numpy array for a provided DatasetName object
     TODO: Add some variance to z dimension
     """
     n_features = 3 if is_3d else 2
@@ -33,8 +36,7 @@ def get_dataset_points(dataset_name: DatasetName, is_3d: bool,
         dataset_points, default_cluster_labels = make_blobs(n_samples=n_samples, n_features=n_features,
                                                               random_state=8)
     elif dataset_name == DatasetName.CIRCLES:
-        dataset_points, default_cluster_labels = make_circles(n_samples=n_samples, factor=0.5, noise=0.05,
-                                                                random_state=6)
+        dataset_points, default_cluster_labels = make_circles(n_samples=n_samples, factor=0.5, noise=0.05, random_state=0)
         if is_3d:
             dataset_points = np.insert(dataset_points, 2, 1, axis=1)
     elif dataset_name == DatasetName.Moons:
@@ -57,7 +59,7 @@ def get_dataset_points(dataset_name: DatasetName, is_3d: bool,
     return dataset_points
 
 
-def get_cluster_features(dataset_points: np.ndarray) -> np.ndarray:
+def add_user_data_input_listener(dataset_points: np.ndarray) -> np.ndarray:
     """
     Creates the streamlit text area input to allow the user to provide clustering features on their own.
     Returns a 2d or 3d numpy array with clustering features.
@@ -87,11 +89,18 @@ def get_cluster_features(dataset_points: np.ndarray) -> np.ndarray:
     return cluster_features
 
 
-def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: DatasetName, cluster_features: np.ndarray):
+def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: DatasetName, cluster_features: np.ndarray) -> dict:
+    """
+
+    :param cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
+    :param dataset_name: Dataset name which implies data points
+    :param cluster_features: All 2 or 3 dimensional cluster features
+    :return: Default sklearn cluster algorithm parameters as dict
+    """
     params = DEFAULT_CLUSTER_ALGO_PARAMS.copy()
     cluster_algo_default_params = read_cluster_algo_default_params()
     params.update(cluster_algo_default_params[dataset_name])
-    # Cluster Algo Parameters
+
     if cluster_algo == ClusterAlgo.KMEANS:
         n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
         init = st.sidebar.selectbox("Method for Initialization", ["k-means++", "random"], key=f"{cluster_algo} MoI")
@@ -146,8 +155,8 @@ def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: Dataset
         metric = st.sidebar.selectbox("Metric for Distance Computation",
                                       get_sklearn_metrics(default="minkowski"),
                                       key=f"{cluster_algo} MDC")
-        p = st.sidebar.number_input("Parameter for the Minkowski metric", value=2, key=f"{cluster_algo} P")
-        xi = st.sidebar.number_input("XI", value=params["xi"], key=f"{cluster_algo} XI")
+        p = st.sidebar.number_input("Parameter for the Minkowski metric", min_value=1, value=2, key=f"{cluster_algo} P")
+        xi = st.sidebar.number_input("XI", value=params["xi"], min_value=0.0, max_value=1.0, key=f"{cluster_algo} XI")
         min_cluster_size = st.sidebar.number_input("Minimum Number of Samples in Cluster", value=params["min_cluster_size"], key=f"{cluster_algo} min_cluster_size")
         algorithm = st.sidebar.selectbox("Algorithm for Nearest Neighbors",
                                       ["auto", "ball_tree", "kd_tree", "brute"],
@@ -155,9 +164,9 @@ def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: Dataset
         cluster_algo_kwargs = {"min_samples": min_samples, "p": p, "xi": xi, "metric": metric,
                                "min_cluster_size": min_cluster_size, "algorithm": algorithm}
     elif cluster_algo == ClusterAlgo.BIRCH:
+        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
         threshold = st.sidebar.number_input("Threshold", value=0.5, key=f"{cluster_algo} T")
         branching_factor = st.sidebar.number_input("Branching Factor", value=50, key=f"{cluster_algo} BF")
-        n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
         cluster_algo_kwargs = {"n_clusters": n_clusters, "threshold": threshold, "branching_factor": branching_factor}
     elif cluster_algo == ClusterAlgo.GAUSSIAN_MIXTURE:
         n_clusters = st.sidebar.number_input("Number of Clusters", value=params["n_clusters"], key=f"{cluster_algo} NoC")
@@ -169,3 +178,6 @@ def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, dataset_name: Dataset
     else:
         cluster_algo_kwargs = {}
     return cluster_algo_kwargs
+
+def split_list(list_obj, split_size):
+    return [list_obj[i:i+split_size] for i in range(0, len(list_obj), split_size)]
