@@ -15,7 +15,7 @@ from utils.visualization import plot_figure
 # TODO: Customize icon
 st.set_page_config(
     page_title="ikneed",
-    page_icon="📈",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -45,7 +45,6 @@ def main():
     # Cluster Algo
     cluster_algos: List[str] = st.sidebar.multiselect(
         "Cluster Algorithms", [ca.value for ca in CLUSTER_ALGORITHMS], [CLUSTER_ALGORITHMS[0]])
-    from more_itertools import batched
     for cluster_algo_splitted_list in split_list(cluster_algos, MAX_PLOTS_PER_ROW):
         display_cols = st.columns(MAX_PLOTS_PER_ROW)
         for i, cluster_algo_str in enumerate(cluster_algo_splitted_list):
