@@ -14,23 +14,20 @@ from data_classes import DatasetName, ClusterAlgo
 
 
 def read_cluster_algo_default_params() -> dict:
-    """Read json file with dynamic default values of sklearn cluster algorithms """
+    """Reads json file with dynamic default values of sklearn cluster algorithms """
     with open('cluster_algo_default_params.json') as json_file:
         cluster_algo_default_params = json.load(json_file)
     return cluster_algo_default_params
 
 def get_sklearn_metrics(default):
-    """Return a list of sklearn metrics and include default to first element of array"""
+    """Returns a list of sklearn metrics and includes default as first element of array"""
     metrics = sklearn_metrics.copy()
     metrics.remove(default)
     return [default] + metrics
 
 def get_default_dataset_points(dataset_name: DatasetName, is_3d: bool,
                                n_samples: int = DEFAULT_DATASET_N_SAMPLES) -> np.ndarray:
-    """
-    Returns a 2d or 3d numpy array for a provided DatasetName object
-    TODO: Add some variance to z dimension
-    """
+    """Returns a 2d or 3d numpy array for a provided DatasetName object"""
     n_features = 3 if is_3d else 2
     if dataset_name == DatasetName.BLOBS:
         dataset_points, default_cluster_labels = make_blobs(n_samples=n_samples, n_features=n_features,
@@ -90,12 +87,17 @@ def add_user_data_input_listener(dataset_points: np.ndarray) -> np.ndarray:
 
 
 def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, cluster_features: np.ndarray, dataset_name: DatasetName) -> dict:
-    """
+    """ Includes ui elements for parameter configuration.
+        Based on the selected dataset_name the default cluster algo parameter may change.
 
-        :param cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
-        :param cluster_features: 2 or 3 dimensional cluster features
-        :param dataset_name: Dataset name which implies data points
-        :return: Default sklearn cluster algorithm parameters as dict
+    Args:
+        cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
+        cluster_features: 2 or 3 dimensional cluster features
+        dataset_name: Dataset name which implies data points
+
+    Returns:
+        Default sklearn cluster algorithm parameters as dict
+
     """
     params = DEFAULT_CLUSTER_ALGO_PARAMS.copy()
     cluster_algo_default_params = read_cluster_algo_default_params()
@@ -108,7 +110,6 @@ def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, cluster_features: np.
     elif cluster_algo == ClusterAlgo.AFFINITY_PROPAGATION:
         damping = st.sidebar.number_input("Damping Factor", value=params["damping"], min_value=0.5, max_value=0.99999999, key=f"{cluster_algo} DF")
         preference = st.sidebar.number_input("Preference", value=params["preference"], key=f"{cluster_algo} P")
-        #affinity = st.sidebar.selectbox("Affinity", ["euclidean", "precomputed"], key="AFFINITY_PROPAGATION A")
         cluster_algo_kwargs = {"damping": damping, "preference": preference, "random_state": 0}
     elif cluster_algo == ClusterAlgo.MEAN_SHIFT:
         bandwidth = cluster.estimate_bandwidth(cluster_features, quantile=params["quantile"])

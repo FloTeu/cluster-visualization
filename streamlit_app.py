@@ -10,7 +10,6 @@ from utils.modeling import get_cluster_labels
 from utils.visualization import plot_figure
 from data_classes import DatasetName
 
-# TODO: Customize icon
 st.set_page_config(
     page_title="Cluster Visualization",
     page_icon="📊",
@@ -18,24 +17,22 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-
 def main():
     """
     The main function
     """
 
-    st.sidebar.write("Either upload csv file, or use one of the example datasets")
-    uploaded_file = st.sidebar.file_uploader("CSV File", type="csv")
+    st.sidebar.write("Either upload a CSV file, or use one of the example datasets")
+    st.sidebar.subheader("1. Upload a CSV File")
+    uploaded_file = st.sidebar.file_uploader("File Uploader", type="csv")
     if uploaded_file is not None:
         dataset_name = DatasetName.CUSTOM.value
-        # Can be used wherever a "file-like" object is accepted:
         df = pd.read_csv(uploaded_file)
         if df.shape[1] not in [2,3]:
             raise ValueError(f"Only 2 or 3 dimensional features are allowed, but csv file contains {df.shape[1]} features")
         default_dataset_points = df.iloc[:,0:3].to_numpy()
     else:
-        st.sidebar.subheader("Example Dataset")
+        st.sidebar.subheader("2. Example Dataset")
         is_3d = st.sidebar.checkbox("Use 3D Features", value=False)
         dataset_name = st.sidebar.selectbox(
             "Default Data", [dn.value for dn in DATASET_NAMES])
@@ -47,7 +44,7 @@ def main():
 
     st.title("Cluster Visualization")
     st.write("Streamlit application of the [sklearn cluster comparison](https://scikit-learn.org/stable/modules/clustering.html) page. \n"
-             "Feel free to upload your own custom data or to play around with one of the example datasets. The cluster algorithm parameters can interactivly be updated and three dimensional visualizations are possible as well.")
+             "Feel free to upload your own custom data or to play around with one of the example datasets. The parameters of the cluster algorithm can be updated interactively and three-dimensional visualizations are also possible.")
     st.write("[Source code](https://github.com/FloTeu/cluster-visualization)")
 
     # Cluster Algo
@@ -60,16 +57,13 @@ def main():
             cluster_algo_kwargs = get_cluster_algo_parameters(cluster_algo_str, cluster_features_scaled, dataset_name)
             cluster_labels = get_cluster_labels(cluster_features_scaled, cluster_algo_str, **cluster_algo_kwargs)
 
-            # plot the figure
+            # Visualize clustering results
             display_cols[i].subheader(cluster_algo_str)
-
             fig = plot_figure(cluster_features,cluster_labels)
-            # prevent that on visualization does not take the whole width
+
+            # prevent that a single visualization does not take the whole width
             use_container_width = len(cluster_algos) > 1
             display_cols[i].plotly_chart(fig, use_container_width=use_container_width)
-
-
-
 
 
 if __name__ == "__main__":
