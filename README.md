@@ -1,4 +1,4 @@
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://floteu-cluster-visualization-streamlit-app-t2eu4v.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://cluster-visualization.streamlit.app/)
 
 # Cluster visualization
 Cluster visualization is a [streamlit](https://streamlit.io) app that allows users to identify clusters in their two- or three-dimensional data by selecting a [sklean](https://scikit-learn.org/stable/modules/clustering.html) cluster algorithm and interactively changing their parameters. 
@@ -6,7 +6,7 @@ Cluster visualization is a [streamlit](https://streamlit.io) app that allows use
 # Access
 **Visit one of the hosted apps:**  
 
-1. On Streamlit: https://floteu-cluster-visualization-streamlit-app-t2eu4v.streamlit.app/
+1. On Streamlit: https://cluster-visualization.streamlit.app/
 
 **Host your own**  
 
