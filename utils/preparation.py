@@ -13,7 +13,6 @@ from constants import DEFAULT_DATASET_N_SAMPLES, DEFAULT_CLUSTER_ALGO_PARAMS
 from data_classes import DatasetName, ClusterAlgo
 
 
-@st.cache_data
 def read_cluster_algo_default_params() -> dict:
     """Read json file with dynamic default values of sklearn cluster algorithms """
     with open('cluster_algo_default_params.json') as json_file:
@@ -94,7 +93,7 @@ def get_cluster_algo_parameters(cluster_algo: ClusterAlgo, cluster_features: np.
     """
 
         :param cluster_algo: sklearn cluster algorithm string or ClusterAlgo object
-        :param cluster_features: All 2 or 3 dimensional cluster features
+        :param cluster_features: 2 or 3 dimensional cluster features
         :param dataset_name: Dataset name which implies data points
         :return: Default sklearn cluster algorithm parameters as dict
     """

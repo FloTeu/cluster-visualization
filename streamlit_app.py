@@ -12,7 +12,7 @@ from data_classes import DatasetName
 
 # TODO: Customize icon
 st.set_page_config(
-    page_title="ikneed",
+    page_title="Cluster Visualization",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
