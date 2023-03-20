@@ -1,4 +1,4 @@
-streamlit
+streamlit==1.11.0
 scikit-learn
 pandas
 numpy
