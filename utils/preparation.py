@@ -31,7 +31,7 @@ def get_default_dataset_points(dataset_name: DatasetName, is_3d: bool,
     n_features = 3 if is_3d else 2
     if dataset_name == DatasetName.BLOBS:
         dataset_points, default_cluster_labels = make_blobs(n_samples=n_samples, n_features=n_features,
-                                                              random_state=8)
+                                                              random_state=0)
     elif dataset_name == DatasetName.CIRCLES:
         dataset_points, default_cluster_labels = make_circles(n_samples=n_samples, factor=0.5, noise=0.05, random_state=0)
         if is_3d:
