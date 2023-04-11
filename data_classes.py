@@ -21,3 +21,8 @@ class DatasetName(str, Enum):
     VARIED_VARIANCES = "Varied Variances"
     ANISOTROPICLY_DISTRIBUTED = "Anisotropicly Distributed"
     CUSTOM = "Custom"
+
+class DimensionReductionAlgo(str, Enum):
+    PCA="Principal Component Analysis"
+    T_SNE="t-SNE"
+    UMAP="UMAP"

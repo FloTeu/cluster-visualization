@@ -8,7 +8,8 @@ from constants import CLUSTER_ALGORITHMS, DATASET_NAMES, MAX_PLOTS_PER_ROW
 from utils.preparation import get_default_dataset_points, get_cluster_algo_parameters, add_user_data_input_listener, split_list
 from utils.modeling import get_cluster_labels
 from utils.visualization import plot_figure
-from data_classes import DatasetName
+from utils.dimension_reduction import apply_standardization, dimensionality_reduction
+from data_classes import DatasetName, DimensionReductionAlgo
 
 st.set_page_config(
     page_title="Cluster Visualization",
@@ -23,17 +24,21 @@ def main():
     """
 
     st.sidebar.write("Either upload a CSV file, or use one of the example datasets")
+    is_3d = st.sidebar.checkbox("Use 3D Features", value=False)
     st.sidebar.subheader("1. Upload a CSV File")
     uploaded_file = st.sidebar.file_uploader("File Uploader", type="csv")
     if uploaded_file is not None:
         dataset_name = DatasetName.CUSTOM.value
         df = pd.read_csv(uploaded_file)
-        if df.shape[1] not in [2,3]:
-            raise ValueError(f"Only 2 or 3 dimensional features are allowed, but csv file contains {df.shape[1]} features")
-        default_dataset_points = df.iloc[:,0:3].to_numpy()
+        default_dataset_points = df.to_numpy()
+        if default_dataset_points.shape[1] not in [2,3]:
+            dim_red_algo: DimensionReductionAlgo = st.sidebar.selectbox("Choose an Algo for Dimension Reduction:", [DimensionReductionAlgo.PCA.value, DimensionReductionAlgo.UMAP.value, DimensionReductionAlgo.T_SNE.value])
+            do_standardization = st.sidebar.checkbox("Standardize Data", value=True)
+            if do_standardization:
+                default_dataset_points = apply_standardization(default_dataset_points)
+            default_dataset_points = dimensionality_reduction(default_dataset_points, dim_red_algo, out_dimension=3 if is_3d else 2)
     else:
         st.sidebar.subheader("2. Example Dataset")
-        is_3d = st.sidebar.checkbox("Use 3D Features", value=False)
         dataset_name = st.sidebar.selectbox(
             "Default Data", [dn.value for dn in DATASET_NAMES])
         default_dataset_points = get_default_dataset_points(dataset_name, is_3d)
