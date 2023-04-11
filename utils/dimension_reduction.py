@@ -23,7 +23,7 @@ def apply_pca(X: np.ndarray, principal_components=2) -> np.ndarray:
 def apply_umap(X: np.ndarray, out_dimension=2) -> np.ndarray:
     """ Dimension reduction with UMAP suitable for non-linear data
     """
-    dim_reducer = UMAP(random_state=0)
+    dim_reducer = UMAP(n_components=out_dimension, random_state=0)
     return dim_reducer.fit_transform(X)
 
 def apply_tsne(X: np.ndarray, out_dimension=2, prp = 40) -> np.ndarray:
